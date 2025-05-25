@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -272,6 +271,16 @@ export const ChatInterface = () => {
       return;
     }
 
+    // Validate the limit range
+    if (limit < 1 || limit > 100) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid number of pages to crawl (1-100)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCrawling(true);
     setCrawlStatus("🚀 Starting crawl...");
 
@@ -539,7 +548,10 @@ export const ChatInterface = () => {
           {/* URL Input Section */}
           <div className="flex gap-3 mb-3 items-end">
             <div className="flex-1 relative">
-              <label htmlFor="url-input" className="block text-xs text-gray-600 mb-1">
+              <label
+                htmlFor="url-input"
+                className="block text-xs text-gray-600 mb-1"
+              >
                 Website URL
               </label>
               <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -555,15 +567,22 @@ export const ChatInterface = () => {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="pages-limit" className="text-xs text-gray-600 mb-1">
-                Pages to crawl
+              <label
+                htmlFor="pages-limit"
+                className="text-xs text-gray-600 mb-1"
+              >
+                Pages to crawl(Max: 100)
               </label>
               <Input
                 id="pages-limit"
                 type="number"
                 placeholder="Pages"
                 value={limit}
-                onChange={(e) => setLimit(parseInt(e.target.value) || 10)}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 10;
+                  // Enforce the 1-100 range
+                  setLimit(Math.min(Math.max(value, 1), 100));
+                }}
                 disabled={isCrawling || isCrawled}
                 className="w-24 bg-white/70 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 min="1"
