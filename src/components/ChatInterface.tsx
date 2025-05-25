@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Globe, Loader2 } from "lucide-react";
 
 // API base URL - can be easily changed for different environments
-const API_BASE_URL = "https://chat-image-qstommyshu.replit.app/";
+const API_BASE_URL =
+  "https://fd83b665-94c5-4d58-8d29-6f3fb030a2b2-00-1q3u2fmjgu72y.picard.replit.dev/";
 
 // Helper function to build API URLs correctly
 const buildApiUrl = (path: string) => {
@@ -146,7 +147,7 @@ export const ChatInterface = () => {
           eventSourceRef.current.close();
           setIsCrawling(false);
           setCrawlStatus(
-            "❌ Connection timeout: Server did not respond within 10 seconds"
+            "❌ Connection timeout: Server did not respond within 30 seconds"
           );
           toast({
             title: "Connection Timeout",
@@ -155,7 +156,7 @@ export const ChatInterface = () => {
             variant: "destructive",
           });
         }
-      }, 10000); // 10 second timeout
+      }, 60000); // 60 second timeout
 
       eventSourceRef.current = eventSource;
 
