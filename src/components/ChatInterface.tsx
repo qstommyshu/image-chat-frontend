@@ -7,8 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Globe, Loader2 } from "lucide-react";
 
 // API base URL - can be easily changed for different environments
-const API_BASE_URL =
-  "https://fd83b665-94c5-4d58-8d29-6f3fb030a2b2-00-1q3u2fmjgu72y.picard.replit.dev/";
+const API_BASE_URL = "https://chat-image-qstommyshu.replit.app/";
 
 // Helper function to build API URLs correctly
 const buildApiUrl = (path: string) => {
@@ -572,7 +571,7 @@ export const ChatInterface = () => {
                 htmlFor="pages-limit"
                 className="text-xs text-gray-600 mb-1"
               >
-                Pages to crawl(Max: 100)
+                Pages to crawl(Max: 20)
               </label>
               <Input
                 id="pages-limit"
@@ -581,8 +580,8 @@ export const ChatInterface = () => {
                 value={limit}
                 onChange={(e) => {
                   const value = parseInt(e.target.value) || 10;
-                  // Enforce the 1-100 range
-                  setLimit(Math.min(Math.max(value, 1), 100));
+                  // Enforce the 1-20 range
+                  setLimit(Math.min(Math.max(value, 1), 20));
                 }}
                 disabled={isCrawling || isCrawled}
                 className="w-24 bg-white/70 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
