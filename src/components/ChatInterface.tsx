@@ -616,13 +616,23 @@ export const ChatInterface = () => {
           {crawlStatus && (
             <div className="text-sm text-gray-600 bg-gray-50 rounded p-2 mb-2">
               {crawlStatus}
+              {sessionId && (
+                <div className="mt-1 text-xs text-blue-600">
+                  Session ID: <span className="font-mono">{sessionId}</span>
+                </div>
+              )}
             </div>
           )}
 
           {isCrawled && (
-            <p className="text-sm text-green-600">
+            <div className="text-sm text-green-600 bg-green-50 rounded p-2">
               ✓ Successfully crawled {url} - Ready to chat!
-            </p>
+              {sessionId && (
+                <div className="mt-1 text-xs text-green-700">
+                  Session ID: <span className="font-mono">{sessionId}</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
