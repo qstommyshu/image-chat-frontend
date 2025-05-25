@@ -549,16 +549,22 @@ export const ChatInterface = () => {
                 className="pl-10 bg-white/70 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
-            <Input
-              type="number"
-              placeholder="Pages"
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value) || 10)}
-              disabled={isCrawling || isCrawled}
-              className="w-24 bg-white/70 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              min="1"
-              max="50"
-            />
+            <div className="flex flex-col">
+              <label htmlFor="pages-limit" className="text-xs text-gray-600 mb-1">
+                Pages to crawl
+              </label>
+              <Input
+                id="pages-limit"
+                type="number"
+                placeholder="Pages"
+                value={limit}
+                onChange={(e) => setLimit(parseInt(e.target.value) || 10)}
+                disabled={isCrawling || isCrawled}
+                className="w-24 bg-white/70 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                min="1"
+                max="50"
+              />
+            </div>
             <Button
               onClick={handleCrawl}
               disabled={isCrawling || isCrawled || !url.trim()}
