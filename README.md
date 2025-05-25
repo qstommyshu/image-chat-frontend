@@ -1,73 +1,89 @@
-# Welcome to your Lovable project
+# Image Chat Frontend
 
-## Project info
+This is the frontend of [ImageChat](https://github.com/qstommyshu/image-chat), for the full feature, please checkout the backend.
 
-**URL**: https://lovable.dev/projects/4cb97f26-27d4-40c7-bcc0-d94a63648571
+## Project Overview
 
-## How can I edit this code?
+This application crawls websites to extract and index images, then allows users to search and interact with the discovered images through a conversational AI interface. The frontend dynamically converts image URLs to HTMLImageElement components for seamless display with lazy loading and error handling.
 
-There are several ways of editing your application.
+## Key Features
 
-**Use Lovable**
+- **Website Crawling**: Input any website URL to crawl and extract images
+- **Real-time Status Updates**: Live crawling progress via Server-Sent Events (SSE)
+- **AI Chat Interface**: Natural language search for discovered images
+- **Dynamic Image Rendering**: URLs are dynamically converted to HTMLImageElement with:
+  - Lazy loading for performance optimization
+  - Error handling with fallback placeholders
+  - Click-to-expand functionality
+- **Session Management**: Persistent crawl sessions with unique identifiers
+- **Image Metadata**: Display of image format, source page, and relevance scores
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4cb97f26-27d4-40c7-bcc0-d94a63648571) and start prompting.
+## Architecture
 
-Changes made via Lovable will be committed automatically to this repo.
+### Frontend (React TypeScript)
 
-**Use your preferred IDE**
+- **Main Component**: `src/components/ChatInterface.tsx`
+- **Image Rendering**: Dynamic conversion of image URLs to HTML `<img>` elements
+- **Real-time Updates**: EventSource API for live crawling status
+- **Error Handling**: Graceful fallback for broken image URLs
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend API Integration
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Base URL**: `http://127.0.0.1:5001/` (configurable)
+- **Endpoints**:
+  - `POST /crawl` - Initiate website crawling
+  - `GET /crawl/{session_id}/status` - Real-time status updates (SSE)
+  - `POST /chat` - AI-powered image search
+  - `GET /health` - API health check
 
-Follow these steps:
+### Image Display Implementation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```typescript
+// Dynamic image loading with error handling
+<img
+  src={result.url}
+  alt={result.alt_text}
+  loading="lazy"
+  onError={(e) => {
+    // Hide broken image and show fallback
+    const target = e.target as HTMLImageElement;
+    target.style.display = "none";
+    // Show fallback placeholder
+  }}
+/>
 ```
 
-**Edit a file directly in GitHub**
+**Backend Setup**
+Check it out [here](https://github.com/qstommyshu/image-chat)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Technologies Used
 
-**Use GitHub Codespaces**
+### Tech Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Vite** - Build tool and development server
+- **TypeScript** - Type-safe JavaScript
+- **React** - UI framework with hooks (useState, useEffect, useRef)
+- **shadcn-ui** - Modern UI component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Lucide React** - Icon library
 
-## What technologies are used for this project?
+### Key React Features
 
-This project is built with:
+- **EventSource API** - Real-time server-sent events
+- **Dynamic Image Loading** - URL to HTMLImageElement conversion
+- **Error Boundaries** - Graceful image loading failures
+- **Lazy Loading** - Performance optimization for images
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### API Communication
 
-## How can I deploy this project?
+- **Fetch API** - HTTP requests to backend
+- **Server-Sent Events** - Real-time crawling updates
+- **Session Management** - Persistent crawl sessions
 
-Simply open [Lovable](https://lovable.dev/projects/4cb97f26-27d4-40c7-bcc0-d94a63648571) and click on Share -> Publish.
+## Development Features
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Real-time Status Updates**: Live feedback during website crawling
+- **Responsive Design**: Works on desktop and mobile devices
+- **Error Handling**: Comprehensive error states and fallbacks
+- **Performance Optimized**: Lazy loading and efficient re-renders
+- **Type Safety**: Full TypeScript implementation

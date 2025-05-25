@@ -11,7 +11,7 @@ const API_BASE_URL = "https://chat-image-qstommyshu.replit.app/";
 
 // Helper function to build API URLs correctly
 const buildApiUrl = (path: string) => {
-  // Ensure there's a single slash between base URL and path
+  // Ensure there's a single slash between base URL and panth
   const baseWithoutTrailingSlash = API_BASE_URL.endsWith("/")
     ? API_BASE_URL.slice(0, -1)
     : API_BASE_URL;
