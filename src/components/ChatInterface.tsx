@@ -6,6 +6,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Globe, Loader2 } from "lucide-react";
 
+// API base URL - can be easily changed for different environments
+const API_BASE_URL = "https://chat-image-qstommyshu.replit.app/";
+
+// Helper function to build API URLs correctly
+const buildApiUrl = (path: string) => {
+  // Ensure there's a single slash between base URL and path
+  const baseWithoutTrailingSlash = API_BASE_URL.endsWith("/")
+    ? API_BASE_URL.slice(0, -1)
+    : API_BASE_URL;
+
+  const pathWithLeadingSlash = path.startsWith("/") ? path : `/${path}`;
+
+  return `${baseWithoutTrailingSlash}${pathWithLeadingSlash}`;
+};
+
 interface Message {
   id: string;
   role: "ai" | "human";
@@ -60,6 +75,46 @@ export const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Test connection to API on mount
+  useEffect(() => {
+    const testApiConnection = async () => {
+      try {
+        // First, check the health endpoint
+        const healthUrl = buildApiUrl("health");
+        console.log("Testing API connection:", healthUrl);
+
+        const healthResponse = await fetch(healthUrl);
+        const healthData = await healthResponse.json();
+
+        console.log("API health check successful:", healthData);
+
+        // Then check the sessions endpoint
+        const sessionsUrl = buildApiUrl("sessions");
+        console.log("Testing sessions endpoint:", sessionsUrl);
+
+        const sessionsResponse = await fetch(sessionsUrl);
+        const sessionsData = await sessionsResponse.json();
+
+        console.log("Sessions endpoint successful:", sessionsData);
+
+        toast({
+          title: "Server Connected",
+          description: `Connected to API server (${healthData.version}) with ${sessionsData.sessions.length} active sessions`,
+        });
+      } catch (error) {
+        console.error("API connection failed:", error);
+        toast({
+          title: "Server Connection Failed",
+          description:
+            "Could not connect to API server. Check console for details.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    testApiConnection();
+  }, [toast]);
+
   // Cleanup EventSource on unmount
   useEffect(() => {
     return () => {
@@ -75,27 +130,75 @@ export const ChatInterface = () => {
       eventSourceRef.current.close();
     }
 
-    // Subscribe to status updates via SSE
-    const eventSource = new EventSource(
-      `http://127.0.0.1:5000/crawl/${sessionId}/status`
-    );
-    eventSourceRef.current = eventSource;
+    const statusUrl = buildApiUrl(`crawl/${sessionId}/status`);
+    console.log("Subscribing to status updates:", statusUrl);
 
-    eventSource.onmessage = (event) => {
-      const data: CrawlStatus = JSON.parse(event.data);
-      handleStatusUpdate(data);
-    };
+    try {
+      // Create and configure EventSource
+      const eventSource = new EventSource(statusUrl, {
+        withCredentials: false, // Don't send cookies with the request
+      });
 
-    eventSource.onerror = (error) => {
-      console.error("EventSource error:", error);
-      eventSource.close();
+      // Set a timeout to detect initial connection issues
+      const timeoutId = setTimeout(() => {
+        if (eventSourceRef.current) {
+          console.warn("EventSource connection timeout - closing connection");
+          eventSourceRef.current.close();
+          setIsCrawling(false);
+          setCrawlStatus(
+            "❌ Connection timeout: Server did not respond within 10 seconds"
+          );
+          toast({
+            title: "Connection Timeout",
+            description:
+              "The server did not respond to the status connection. Try again or check if the server is running.",
+            variant: "destructive",
+          });
+        }
+      }, 10000); // 10 second timeout
+
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        console.log("EventSource connection opened");
+        clearTimeout(timeoutId); // Clear the timeout on successful connection
+        setCrawlStatus("📡 Connection established with server");
+      };
+
+      eventSource.onmessage = (event) => {
+        console.log("EventSource message received:", event.data);
+        try {
+          const data: CrawlStatus = JSON.parse(event.data);
+          handleStatusUpdate(data);
+        } catch (error) {
+          console.error("Error parsing SSE message:", error, event.data);
+          setCrawlStatus(`⚠️ Error parsing server message: ${error.message}`);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("EventSource error:", error);
+        clearTimeout(timeoutId); // Clear the timeout on error
+        eventSource.close();
+        setIsCrawling(false);
+        setCrawlStatus(`❌ Connection error: Failed to connect to server`);
+        toast({
+          title: "Connection Error",
+          description:
+            "Lost connection to server during crawling. The server might be down or experiencing issues.",
+          variant: "destructive",
+        });
+      };
+    } catch (error) {
+      console.error("Error setting up EventSource:", error);
       setIsCrawling(false);
+      setCrawlStatus(`❌ Failed to set up event source: ${error.message}`);
       toast({
         title: "Connection Error",
-        description: "Lost connection to server during crawling",
+        description: `Failed to set up connection to server: ${error.message}`,
         variant: "destructive",
       });
-    };
+    }
   };
 
   const handleStatusUpdate = (data: CrawlStatus) => {
@@ -173,31 +276,59 @@ export const ChatInterface = () => {
 
     try {
       console.log("Starting crawl for URL:", url, "with limit:", limit);
+      const crawlUrl = buildApiUrl("crawl");
+      console.log("API URL:", crawlUrl);
 
-      const response = await fetch("http://127.0.0.1:5000/crawl", {
+      // More robust approach for POST request
+      const response = await fetch(crawlUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
         },
+        credentials: "omit", // Don't send cookies
+        mode: "cors", // Explicitly set CORS mode
         body: JSON.stringify({ url, limit }),
       });
 
+      // Check if we got a response at all
+      if (!response) {
+        throw new Error("No response received from server");
+      }
+
+      // Log all response headers for debugging
+      console.log(
+        "Response headers:",
+        [...response.headers.entries()].reduce((obj, [key, val]) => {
+          obj[key] = val;
+          return obj;
+        }, {})
+      );
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}`, errorText);
+        throw new Error(
+          `HTTP error! status: ${response.status} - ${errorText}`
+        );
       }
 
       const result = await response.json();
       console.log("Crawl response:", result);
 
       setSessionId(result.session_id);
-      subscribeToStatus(result.session_id);
+
+      // Add a small delay before connecting to SSE to ensure server has initialized the session
+      setTimeout(() => {
+        subscribeToStatus(result.session_id);
+      }, 500);
     } catch (error) {
       console.error("Error starting crawl:", error);
       setIsCrawling(false);
       toast({
         title: "Error",
-        description:
-          "Failed to start crawling. Please check the URL and try again.",
+        description: `Failed to start crawling: ${error.message}. Please check the URL and try again.`,
         variant: "destructive",
       });
     }
@@ -225,20 +356,40 @@ export const ChatInterface = () => {
 
     try {
       console.log("Sending chat message:", currentMessage);
+      const chatUrl = buildApiUrl("chat");
+      console.log("Chat API URL:", chatUrl);
 
-      const response = await fetch("http://127.0.0.1:5000/chat", {
+      // More robust approach for POST request
+      const response = await fetch(chatUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
         },
+        credentials: "omit", // Don't send cookies
+        mode: "cors", // Explicitly set CORS mode
         body: JSON.stringify({
           session_id: sessionId,
           chat_history: chatHistory,
         }),
       });
 
+      // Log all response headers for debugging
+      console.log(
+        "Response headers:",
+        [...response.headers.entries()].reduce((obj, [key, val]) => {
+          obj[key] = val;
+          return obj;
+        }, {})
+      );
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}`, errorText);
+        throw new Error(
+          `HTTP error! status: ${response.status} - ${errorText}`
+        );
       }
 
       const result = await response.json();
@@ -259,8 +410,7 @@ export const ChatInterface = () => {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content:
-          "Sorry, I encountered an error processing your message. Please try again.",
+        content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
         timestamp: new Date(),
       };
 
@@ -268,7 +418,7 @@ export const ChatInterface = () => {
 
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: `Failed to send message: ${error.message}`,
         variant: "destructive",
       });
     } finally {
