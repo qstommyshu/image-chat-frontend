@@ -88,18 +88,9 @@ export const ChatInterface = () => {
 
         console.log("API health check successful:", healthData);
 
-        // Then check the sessions endpoint
-        const sessionsUrl = buildApiUrl("sessions");
-        console.log("Testing sessions endpoint:", sessionsUrl);
-
-        const sessionsResponse = await fetch(sessionsUrl);
-        const sessionsData = await sessionsResponse.json();
-
-        console.log("Sessions endpoint successful:", sessionsData);
-
         toast({
           title: "Server Connected",
-          description: `Connected to API server (${healthData.version}) with ${sessionsData.sessions.length} active sessions`,
+          description: `Connected to API server (${healthData.version})`,
         });
       } catch (error) {
         console.error("API connection failed:", error);
